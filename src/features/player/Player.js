@@ -1,11 +1,39 @@
-import React, { memo } from "react";
+import React, { memo, useEffect, useRef } from "react";
 import { MdPause, MdPlayArrow } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
 import { audios } from "../../audios";
 import styles from "./Player.module.css";
-import { pause, play, playSelector } from "./playerSlice";
+import { pause, play, playSelector, selectPlayerMemo } from "./playerSlice";
 
-const Disc = memo(({ isPlaying, letter }) => {
+const NativeAudio = ({ current }) => {
+  const audioRef = useRef(null);
+  const dispatch = useDispatch();
+  const handlePlay = (e) => {
+    !current.isPlaying && dispatch(play(current));
+  };
+
+  const handlePause = (e) => {
+    current.isPlaying && dispatch(pause(current));
+  };
+
+  useEffect(() => {
+    current.isPlaying ? audioRef.current.play() : audioRef.current.pause();
+  }, [current]);
+
+  return (
+    <div className={styles.cardHeader__player}>
+      <audio
+        controls
+        src={current?.audio || ""}
+        onPlay={(e) => handlePlay(e)}
+        onPause={(e) => handlePause(e)}
+        ref={audioRef}
+      />
+    </div>
+  );
+};
+
+const Disc = ({ isPlaying, letter }) => {
   return (
     <div className={styles.cardHeader__image}>
       <div
@@ -17,10 +45,10 @@ const Disc = memo(({ isPlaying, letter }) => {
       </div>
     </div>
   );
-});
+};
 
 function CardHeader() {
-  const player = useSelector(playSelector);
+  const player = useSelector(selectPlayerMemo);
 
   return (
     <div className={styles.cardHeader}>
@@ -28,9 +56,7 @@ function CardHeader() {
         isPlaying={player.current.isPlaying}
         letter={player?.current?.name?.charAt(0)}
       />
-      <div className={styles.cardHeader__player}>
-        <audio controls src={player.current?.audio || ""} />
-      </div>
+      <NativeAudio current={player.current} />
     </div>
   );
 }
@@ -39,7 +65,8 @@ const IconControl = memo(({ isPlaying }) =>
   isPlaying ? <MdPause size={24} /> : <MdPlayArrow size={24} />
 );
 
-const ListItem = memo(({ audio, current, dispatch }) => {
+const ListItem = ({ audio, current }) => {
+  const dispatch = useDispatch();
   return (
     <div
       onClick={() => {
@@ -59,22 +86,15 @@ const ListItem = memo(({ audio, current, dispatch }) => {
       <span>{audio.name}</span>
     </div>
   );
-});
+};
 
 function CardBody() {
   const player = useSelector(playSelector);
-  const dispatch = useDispatch();
-  console.log(player);
   return (
     <div className={styles.cardBody}>
       <div className={styles.cardBodyList}>
-        {audios.map((audio, index) => (
-          <ListItem
-            audio={audio}
-            current={player.current}
-            dispatch={dispatch}
-            key={index}
-          />
+        {audios.map((audio) => (
+          <ListItem audio={audio} current={player.current} key={audio.id} />
         ))}
       </div>
     </div>
