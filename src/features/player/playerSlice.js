@@ -1,8 +1,11 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSelector, createSlice } from "@reduxjs/toolkit";
+import { audios } from "../../audios";
 
 const initialState = {
-  playing: false,
-  audio: null,
+  current: {
+    isPlaying: false,
+  },
+  audios,
 };
 
 const playerSlice = createSlice({
@@ -10,18 +13,10 @@ const playerSlice = createSlice({
   initialState,
   reducers: {
     play: (state, action) => {
-      return {
-        ...state,
-        playing: true,
-        audio: action.payload,
-      };
+      state.current = { isPlaying: true, ...action.payload };
     },
     pause: (state, action) => {
-      return {
-        ...state,
-        playing: false,
-        audio: action.payload,
-      };
+      state.current = { isPlaying: false, ...action.payload };
     },
   },
 });
@@ -29,5 +24,10 @@ const playerSlice = createSlice({
 export const { play, pause } = playerSlice.actions;
 
 export const playSelector = (state) => state.player;
+
+export const selectPlayerMemo = createSelector(
+  [playSelector],
+  (player) => player
+);
 
 export default playerSlice.reducer;
