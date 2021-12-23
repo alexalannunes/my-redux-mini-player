@@ -1,102 +1,80 @@
 import React, { memo } from "react";
-import { audios } from "../../audios";
-import { MdPlayArrow, MdPause } from "react-icons/md";
-import styles from "./Player.module.css";
+import { MdPause, MdPlayArrow } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
+import { audios } from "../../audios";
+import styles from "./Player.module.css";
 import { pause, play, playSelector } from "./playerSlice";
 
-function AudioFn() {
-  const audioRef = React.useRef();
-  const player = useSelector(playSelector);
-  const dispatch = useDispatch();
-
-  React.useEffect(() => {
-    if (player.playing) {
-      audioRef.current?.play();
-    } else {
-      audioRef.current?.pause();
-    }
-  }, [player]);
-
+const Disc = memo(({ isPlaying, letter }) => {
   return (
-    <audio
-      onPause={(e) => dispatch(pause(player.audio))}
-      onPlay={(e) => dispatch(play(player.audio))}
-      ref={audioRef}
-      controls
-      src={player.audio?.audio || ""}
-    />
+    <div className={styles.cardHeader__image}>
+      <div
+        className={`${styles.cardHeader__image__disc} ${
+          isPlaying.playing && styles.cardHeader__image__disc__Rotate
+        }`}
+      >
+        {letter}
+      </div>
+    </div>
   );
-}
+});
+
 function CardHeader() {
   const player = useSelector(playSelector);
-  const dispatch = useDispatch();
 
   return (
     <div className={styles.cardHeader}>
-      <div className={styles.cardHeader__image}>
-        <div
-          className={`${styles.cardHeader__image__disc} ${
-            player.playing && styles.cardHeader__image__disc__Rotate
-          }`}
-        >
-          {player.audio?.name?.charAt(0)}
-        </div>
-      </div>
+      <Disc
+        isPlaying={player.current.isPlaying}
+        letter={player?.current?.name?.charAt(0)}
+      />
       <div className={styles.cardHeader__player}>
-        {player.audio && (
-          <span
-            style={{ display: "flex", alignItems: "center" }}
-            onClick={() => {
-              if (player.playing) {
-                dispatch(pause(player.audio));
-              } else {
-                dispatch(play(player.audio));
-              }
-            }}
-          ></span>
-        )}
-        <AudioFn player={player} />
+        <audio controls src={player.current?.audio || ""} />
       </div>
     </div>
   );
 }
 
-const ListItem = memo(({ audio }) => {
-  const player = useSelector(playSelector);
-  const dispatch = useDispatch();
+const IconControl = memo(({ isPlaying }) =>
+  isPlaying ? <MdPause size={24} /> : <MdPlayArrow size={24} />
+);
+
+const ListItem = memo(({ audio, current, dispatch }) => {
   return (
     <div
       onClick={() => {
-        if (player.playing && player?.audio?.name === audio.name) {
-          console.log("pause", player, audio);
-
+        if (current?.isPlaying && current?.name === audio.name) {
           dispatch(pause(audio));
         } else {
-          console.log("play");
           dispatch(play(audio));
         }
       }}
       className={styles.cardBodyList__item}
     >
       <span className={styles.cardBodyList__item__icon}>
-        {player.playing && player.audio?.name === audio.name ? (
-          <MdPause size={24} />
-        ) : (
-          <MdPlayArrow size={24} />
-        )}
+        <IconControl
+          isPlaying={current?.isPlaying && current?.name === audio.name}
+        />
       </span>
       <span>{audio.name}</span>
     </div>
   );
 });
-ListItem.displayName = "ListItem";
+
 function CardBody() {
+  const player = useSelector(playSelector);
+  const dispatch = useDispatch();
+  console.log(player);
   return (
     <div className={styles.cardBody}>
       <div className={styles.cardBodyList}>
         {audios.map((audio, index) => (
-          <ListItem audio={audio} key={index} />
+          <ListItem
+            audio={audio}
+            current={player.current}
+            dispatch={dispatch}
+            key={index}
+          />
         ))}
       </div>
     </div>
